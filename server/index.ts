@@ -1,4 +1,3 @@
-// server/index.ts
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import cookieSession from 'cookie-session';
@@ -15,7 +14,7 @@ const PORT = 3000;
 app.use(
   cookieSession({
     name: 'session',
-    keys: ['your-secret-key'], // よりセキュアなキーを設定してください
+    keys: ['your-secret-key'],
     maxAge: 24 * 60 * 60 * 1000, // 24時間
   })
 );
@@ -75,18 +74,9 @@ app.get(
       // 認証コードからアクセストークンを取得
       const { tokens } = await oauth2Client.getToken(code);
       oauth2Client.setCredentials(tokens);
-      
-      // ユーザー情報を取得
-      const oauth2 = google.oauth2({
-        auth: oauth2Client,
-        version: 'v2',
-      });
-      const userInfoResponse = await oauth2.userinfo.get();
-      const user = userInfoResponse.data;
-      
-      // セッションにトークンやユーザー情報を保存
+
+      // セッションにトークンを保存
       req.session!.tokens = tokens;
-      req.session!.user = user;
       
       // フロントエンド（Vite サーバー）にリダイレクト
       res.redirect('http://localhost:5173');
@@ -100,12 +90,21 @@ app.get(
 // ログインユーザーのプロフィールを取得するためのエンドポイント
 app.get(
   '/profile',
-  (req: Request, res: Response, next: NextFunction): void => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     if (!req.session || !req.session.user) {
       res.status(401).send('未認証です');
       return;
     }
-    res.json(req.session.user);
+    
+    // ユーザー情報を取得
+    const oauth2 = google.oauth2({
+      auth: oauth2Client,
+      version: 'v2',
+    });
+    const userInfoResponse = await oauth2.userinfo.get();
+    const user = userInfoResponse.data;
+
+    res.json(user);
   }
 );
 
