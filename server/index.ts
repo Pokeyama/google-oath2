@@ -91,7 +91,7 @@ app.get(
 app.get(
   '/profile',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    if (!req.session || !req.session.user) {
+    if (!req.session) {
       res.status(401).send('未認証です');
       return;
     }
